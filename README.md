@@ -1,5 +1,6 @@
-# Halltape ETL [Docker Compose]
-
+# HalltapeETLPipeline
+***
+![HalltapeETLPipeline](https://github.com/halltape/HalltapeETL/blob/main/png/etl.png)
 ## Getting Started
 
 ### Building the Docker Images
