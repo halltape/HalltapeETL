@@ -98,5 +98,11 @@ services:
     environment:
       <<: *airflow-common-env
 
+  metabase:
+    image: metabase/metabase
+    ports:
+      - 3333:3000
+    restart: unless-stopped
+    
 volumes:
   postgres-db-volume:
