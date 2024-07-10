@@ -109,6 +109,9 @@ services:
       - "10000:8888"
     volumes:
       - ./dags:/home/jovyan/work
+    environment:
+      - GRANT_SUDO=yes
+    user: root
     restart: always
     
 volumes:
