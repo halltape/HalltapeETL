@@ -110,6 +110,8 @@ services:
       - ADMIN_USERNAME=admin
       - ADMIN_EMAIL=admin@superset.com
       - ADMIN_PASSWORD=admin
+    volumes:
+      - ./superset_data:/app/superset_home
     ports: 
       - '8088:8088'
     depends_on:

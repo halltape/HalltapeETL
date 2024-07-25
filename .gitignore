@@ -7,5 +7,7 @@ synthetic_data/.ipynb_checkpoints
 jupyter_notebook/*
 !jupyter_notebook/halltape_etl.ipynb
 
+superset_data/
+
 dags/
 !dags/extract_data.py
