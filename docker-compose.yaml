@@ -1,4 +1,3 @@
-version: '3'
 x-airflow-common: &airflow-common
   environment:
     &airflow-common-env
