@@ -8,11 +8,11 @@ import json
 
 
 client = Client(host='clickhouse', port=9000,
-                user='airflow', password='airflow')
+                user='admin', password='admin')
 
 dag = DAG(
     dag_id="halltape_etl",
-    start_date=datetime(2024,3,9),
+    start_date=datetime(2024,7,20),
     schedule_interval="@daily"
 )
 
@@ -22,7 +22,7 @@ def get_data_from_api():
     response = requests.get(url)
     launches_json = response.json()
 
-    with open('/opt/airflow/dags/data/launches.json', 'w') as write:
+    with open('/opt/data_lake/launches.json', 'w') as write:
         json.dump(launches_json, write)
 
     data = {
@@ -31,7 +31,7 @@ def get_data_from_api():
         'City': ['New York', 'Los Angeles', 'Chicago']
     }
     df = pd.DataFrame(data)
-    df.to_csv('/opt/airflow/dags/data/output.csv', index=False)
+    df.to_csv('/opt/data_lake/output.csv', index=False)
 
 
 def create_schema():
@@ -88,3 +88,17 @@ stage4 = PythonOperator(
 )
 
 stage1 >> stage2 >> stage3 >> stage4
+
+
+
+
+# CREATE TABLE raw.people (
+#     Name String,
+#     Age INT,
+#     City String
+# ) ENGINE = MergeTree()
+# ORDER BY Name;
+
+# INSERT INTO raw.people
+# SELECT *
+# FROM file('/var/lib/clickhouse/user_files/output.csv', 'CSVWithNames');

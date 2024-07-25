@@ -11,10 +11,10 @@ x-airflow-common: &airflow-common
     AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: 5
     _AIRFLOW_DB_MIGRATE: 'true'
     _AIRFLOW_WWW_USER_CREATE: 'true'
-    _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
-    _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+    _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-admin}
+    _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-admin}
   volumes:
-    - ./dags/data:/opt/airflow/dags/data
+    - ./data_lake:/opt/data_lake
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
@@ -22,6 +22,8 @@ x-airflow-common: &airflow-common
   depends_on:
     postgres:
       condition: service_healthy
+  networks:
+    - all_in_one
 
 services:
   postgres:
@@ -39,23 +41,26 @@ services:
       test: [ "CMD", "pg_isready", "-U", "airflow" ]
       interval: 5s
       retries: 5
+    networks:
+      - all_in_one
 
   clickhouse:
     image: yandex/clickhouse-server:latest
     environment:
-      CLICKHOUSE_USER: airflow
-      CLICKHOUSE_PASSWORD: airflow
+      CLICKHOUSE_USER: admin
+      CLICKHOUSE_PASSWORD: admin
     ports:
       - "8123:8123"
       - "9000:9000"
     volumes:
-      - ./clickhouse_data:/var/lib/clickhouse
-      - ./clickhouse_logs:/var/log/clickhouse-server
+      - ./data_lake:/var/lib/clickhouse/user_files
+    networks:
+      - all_in_one
 
   af-webserver:
     <<: *airflow-common
     build:
-      context: ./airflow_docker_image
+      context: ./airflow_dockerfile
       dockerfile: Dockerfile
     container_name: af-webserver
     environment:
@@ -68,7 +73,7 @@ services:
   af-scheduler:
     <<: *airflow-common
     build:
-      context: ./airflow_docker_image
+      context: ./airflow_dockerfile
       dockerfile: Dockerfile
     container_name: af-scheduler
     environment:
@@ -79,7 +84,7 @@ services:
   af-worker:
     <<: *airflow-common
     build:
-      context: ./airflow_docker_image
+      context: ./airflow_dockerfile
       dockerfile: Dockerfile
     container_name: af-worker
     environment:
@@ -90,30 +95,51 @@ services:
   airflow-init:
     <<: *airflow-common
     build:
-      context: ./airflow_docker_image
+      context: ./airflow_dockerfile
       dockerfile: Dockerfile
     container_name: airflow-init
     command: version
     environment:
       <<: *airflow-common-env
 
-  metabase:
-    image: metabase/metabase
-    ports:
-      - 3333:3000
-    restart: unless-stopped
+  superset:
+    container_name: superset
+    build:
+      context: ./superset_dockerfile
+      dockerfile: Dockerfile
+    environment:
+      - ADMIN_USERNAME=admin
+      - ADMIN_EMAIL=admin@superset.com
+      - ADMIN_PASSWORD=admin
+    ports: 
+      - '8088:8088'
+    depends_on:
+      - postgres
+    networks:
+      - all_in_one
 
   jupyter:
-    image: quay.io/jupyter/datascience-notebook:2024-05-27
-    container_name: my_spark
+    container_name: jupyter_notebook
+    build:
+      context: ./jupyter_dockerfile
+      dockerfile: Dockerfile
     ports:
       - "10000:8888"
+      - "4040:4040"
     volumes:
-      - ./dags:/home/jovyan/work
+      - ./synthetic_data:/home/jovyan/source
+      - ./data_lake:/home/jovyan/data_lake
+      - ./jupyter_notebook:/home/jovyan
+    command: jupyter notebook --no-browser --NotebookApp.token='' --NotebookApp.password='' --ip='*' --allow-root
     environment:
       - GRANT_SUDO=yes
     user: root
     restart: always
+    networks:
+      - all_in_one
     
 volumes:
   postgres-db-volume:
+
+networks:
+  all_in_one:
