@@ -92,13 +92,28 @@ stage1 >> stage2 >> stage3 >> stage4
 
 
 
-# CREATE TABLE raw.people (
-#     Name String,
-#     Age INT,
-#     City String
-# ) ENGINE = MergeTree()
-# ORDER BY Name;
 
-# INSERT INTO raw.people
+# CREATE TABLE raw.debit_card (
+#     card_order_dt String,
+#     card_num String,
+#     cookie String,
+#     url String,
+#     transaction_level Boolean NOT NULL,
+#     status_flag Boolean NOT NULL,
+#     load_date Date NOT NULL
+# ) ENGINE = MergeTree()
+# PARTITION BY toYYYYMM(load_date)
+# ORDER BY card_order_dt;
+
+
+
+# INSERT INTO raw.debit_card
 # SELECT *
-# FROM file('/var/lib/clickhouse/user_files/output.csv', 'CSVWithNames');
+# FROM file('/var/lib/clickhouse/user_files/debit_card/partition_date=*/part-*.csv', 'CSVWithNames',
+#     'card_order_dt String,
+# 	card_num String,
+# 	cookie String,
+# 	url String,
+# 	transaction_level Boolean,
+# 	status_flag Boolean,
+# 	load_date String');

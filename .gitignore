@@ -1,10 +1,11 @@
 logs/
 plugins/
 data_lake/
-synthetic_data/.bash_history
 
+synthetic_data/.ipynb_checkpoints
+
+jupyter_notebook/*
 !jupyter_notebook/halltape_etl.ipynb
-jupyter_notebook
 
 dags/
 !dags/extract_data.py
