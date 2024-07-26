@@ -11,3 +11,6 @@ superset_data/
 
 dags/
 !dags/extract_data.py
+dags/.DS_Store
+
+.DS_Store
