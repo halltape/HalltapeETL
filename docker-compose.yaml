@@ -14,6 +14,7 @@ x-airflow-common: &airflow-common
     _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-admin}
   volumes:
     - ./data_lake:/opt/data_lake
+    - ./synthetic_data:/opt/synthetic_data
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins

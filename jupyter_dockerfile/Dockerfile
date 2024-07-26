@@ -6,4 +6,4 @@ USER root
 
 RUN python -m pip install --upgrade pip && pip install --no-cache-dir -r /requirements.txt
 
-RUN apt update && apt install -y openjdk-8-jdk
+RUN apt update && apt install -y openjdk-17-jdk
