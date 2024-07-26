@@ -98,6 +98,7 @@ services:
       dockerfile: Dockerfile
     container_name: airflow-init
     command: version
+    restart: always
     environment:
       <<: *airflow-common-env
 
