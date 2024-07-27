@@ -40,7 +40,7 @@ docker exec -it <containerID> bash
 |---------|------|---------|----------|
 | Airflow | http://localhost:8080 |   airflow      |    airflow      |
 | PostgreSQL | http://localhost:5432 | airflow | airflow         |
-| ClickHouse | http://localhost:9000 |  airflow       |   airflow       |
+| ClickHouse | http://localhost:9000 |  admin       |   admin       |
 | Jupyter Lab | http://localhost:10000/lab |  -       |   -       |
 | Apache Superset | http://localhost:8088 |  admin       |   admin       |
 ***
