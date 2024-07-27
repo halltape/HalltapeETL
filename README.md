@@ -42,7 +42,7 @@ docker exec -it <containerID> bash
 | PostgreSQL | http://localhost:5432 | airflow | airflow         |
 | ClickHouse | http://localhost:9000 |  airflow       |   airflow       |
 | Jupyter Lab | http://localhost:10000/lab |  -       |   -       |
-| Apache Superset | http://localhost:10000/lab |  admin       |   admin       |
+| Apache Superset | http://localhost:8088 |  admin       |   admin       |
 ***
 
 ### Source
