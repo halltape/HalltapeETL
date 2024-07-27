@@ -1,3 +1,0 @@
-airflow-providers-clickhouse==0.0.1
-pandas
-requests==2.31.0

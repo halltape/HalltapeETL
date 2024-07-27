@@ -1,0 +1,15 @@
+logs/
+plugins/
+data_lake/
+
+synthetic_data/.ipynb_checkpoints
+
+jupyter_notebook/*
+!jupyter_notebook/halltape_etl.ipynb
+
+superset_data/
+
+
+dags/.DS_Store
+
+.DS_Store
