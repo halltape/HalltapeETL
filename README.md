@@ -1,6 +1,6 @@
 # HalltapeETLPipeline
 ***
-![HalltapeETLPipeline](png/etl.png)
+![HalltapeETLPipeline](png/etl.jpg)
 
 This project is an equivalent of a full-fledged ETL process. Open APIs and CSV tables are used as data sources. The main tool for ETL is Apache Spark. For code debugging, there is a Jupyter Notebook with Pandas and Spark installed inside. Apache Airflow is used as the orchestrator. All data marts are stored in ClickHouse. Visualization is deployed on Apache Superset. A shared folder called data_lake is used as a data warehouse (it can be regarded as S3).
 
