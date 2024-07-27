@@ -1,6 +1,9 @@
 # HalltapeETLPipeline
 ***
-![HalltapeETLPipeline](https://github.com/halltape/HalltapeETL/blob/main/png/etl.png)
+![HalltapeETLPipeline](png/etl.png)
+
+This project is an equivalent of a full-fledged ETL process. Open APIs and CSV tables are used as data sources. The main tool for ETL is Apache Spark. For code debugging, there is a Jupyter Notebook with Pandas and Spark installed inside. Apache Airflow is used as the orchestrator. All data marts are stored in ClickHouse. Visualization is deployed on Apache Superset. A shared folder called data_lake is used as a data warehouse (it can be regarded as S3).
+
 ## Getting Started
 
 ### Building the Docker Images
@@ -25,8 +28,6 @@ To go inside the docker container
 docker exec -it <containerID> bash
 ```
 
-This project sets up a Docker environment with Airflow, PostgreSQL, and ClickHouse. The services are orchestrated using Docker Compose.
-
 ***
 ## Prerequisites
 
@@ -40,6 +41,9 @@ This project sets up a Docker environment with Airflow, PostgreSQL, and ClickHou
 | Airflow | http://localhost:8080 |   airflow      |    airflow      |
 | PostgreSQL | http://localhost:5432 | airflow | airflow         |
 | ClickHouse | http://localhost:9000 |  airflow       |   airflow       |
+| Jupyter Notebook | http://localhost:10000/lab |  -       |   -       |
+
+
 
 
 ### PostgreSQL
