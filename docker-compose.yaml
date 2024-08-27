@@ -20,6 +20,7 @@ x-airflow-common: &airflow-common
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
     - ./scripts:/opt/airflow/scripts
+    - ./dbt_click:/opt/dbt_click
   depends_on:
     postgres:
       condition: service_healthy

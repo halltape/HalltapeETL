@@ -1,6 +1,6 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from clickhouse_driver import Client
+from airflow.operators.bash import BashOperator
 from pyspark.sql import SparkSession
 from pyspark.sql import Row
 import pyspark.sql.functions as F
@@ -11,14 +11,6 @@ import pandas as pd
 NOW = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 SOURCE = '/opt/synthetic_data'
 DATA_LAKE = '/opt/data_lake'
-
-CLICK_DB = 'datamart'
-TABLE = 'debit_cards'
-CLICKHOUSE_DATA_LAKE = '/var/lib/clickhouse/user_files/debit_cards/partition_date=*/part-*.csv'
-
-
-client = Client(host='clickhouse', port=9000,
-                user='admin', password='admin')
 
 
 execution_date  = '{{ ds }}'
@@ -126,43 +118,6 @@ def etl(date):
     print(f"{NOW} LOADED!\n\n")
 
 
-def insert_into():
-
-    client.timeout = 3000
-    client.execute(f""" CREATE DATABASE IF NOT EXISTS {CLICK_DB} """)
-    print(f"{NOW} Clickhouse: Database {CLICK_DB} is ready\n\n")
-
-    client.execute(f""" CREATE TABLE IF NOT EXISTS {CLICK_DB}.{TABLE} (
-                            card_order_dt String,
-                            card_num String,
-                            cookie String,
-                            url String,
-                            transaction_level Boolean NOT NULL,
-                            status_flag Boolean NOT NULL,
-                            load_date Date NOT NULL
-                        ) ENGINE = MergeTree()
-                        PARTITION BY toYYYYMM(load_date)
-                        ORDER BY card_order_dt
-                    """)
-    print(f"{NOW} Clickhouse: Table {TABLE} is created\n\n")
-
-
-    client.execute(f"""
-                    INSERT INTO {CLICK_DB}.{TABLE} 
-                    SELECT *
-                    FROM file('{CLICKHOUSE_DATA_LAKE}', 'CSVWithNames',
-                        'card_order_dt String,
-                        card_num String,
-                        cookie String,
-                        url String,
-                        transaction_level Boolean,
-                        status_flag Boolean,
-                        load_date String');
-                """)
-
-    print(f"{NOW} Clickhouse: Data is inserted\n\n")
-
-
 etl_to_data_lake = PythonOperator(
     task_id="etl_to_data_lake",
     python_callable=etl,
@@ -170,9 +125,9 @@ etl_to_data_lake = PythonOperator(
     dag=dag
 )
 
-load_to_clickhouse = PythonOperator(
+load_to_clickhouse = BashOperator(
     task_id="load_to_clickhouse",
-    python_callable=insert_into,
+    bash_command='cd /opt/dbt_click && dbt run --target datamart -m datamart',
     dag=dag
 )
 
