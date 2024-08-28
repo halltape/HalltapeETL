@@ -61,13 +61,13 @@ def etl(date):
     spark = spark_session()
 
     print(f"{NOW} LOADING DATE: {date}\n")
-    card = spark.read.csv(f"{SOURCE}/card.csv", header=True, sep=";")\
+    card = spark.read.csv(f"{SOURCE}/Card.csv", header=True, sep=";")\
                 .where(f''' load_date = "{date}" ''')
     
     status_card = spark.read.csv(f"{SOURCE}/Status_card.csv", header=True, sep=";")\
                         .where(f''' load_date = "{date}"  ''')
     
-    transactions = spark.read.csv(f"{SOURCE}/transactions.csv", header=True, sep=";")\
+    transactions = spark.read.csv(f"{SOURCE}/Transactions.csv", header=True, sep=";")\
                         .where(f''' load_date = "{date}"  ''')
     
     

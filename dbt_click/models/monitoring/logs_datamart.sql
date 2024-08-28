@@ -9,7 +9,7 @@ WITH tmp AS
             created_at String')
     )
 SELECT
-    DISTINCT datamart_name,
+    datamart_name,
     load_date, 
     total_rows,
     MAX(created_at) AS created_at
