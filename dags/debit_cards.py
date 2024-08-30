@@ -149,7 +149,7 @@ etl_to_data_lake = PythonOperator(
 
 load_to_clickhouse = BashOperator(
     task_id="load_to_clickhouse",
-    bash_command='cd /opt/dbt_click && dbt run --target datamart -m datamart',
+    bash_command='cd /opt/dbt_click && dbt run --target datamart -m datamart --vars "{partition_date: "{{ ds }}"}"',
     dag=dag
 )
 
