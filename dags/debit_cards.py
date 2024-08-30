@@ -6,19 +6,41 @@ from pyspark.sql import Row
 import pyspark.sql.functions as F
 from datetime import datetime
 import pandas as pd
-
+import os
+import re
 
 NOW = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 SOURCE = '/opt/synthetic_data'
 DATA_LAKE = '/opt/data_lake'
 
+def earliest_date():
+    # Регулярное выражение для извлечения дат
+    pattern = r'cards_(\d{4})-(\d{2})-(\d{2})\.csv'
 
-execution_date  = '{{ ds }}'
+    # Получение самой ранней даты из файлов
+    earliest_date = None
+
+    # Проход по файлам в директории
+    for filename in os.listdir(SOURCE):
+        match = re.match(pattern, filename)
+        if match:
+            year, month, day = match.groups()
+            date_str = f"{year}-{month}-{day}"
+            date = datetime.strptime(date_str, '%Y-%m-%d')
+
+            # Сохраняем самую раннюю дату
+            if earliest_date is None or date < earliest_date:
+                earliest_date = date
+
+    # Если дата не найдена, используем дату по умолчанию
+    if earliest_date is None:
+        earliest_date = datetime(2024, 8, 1)  # Например, 1 августа 2024
+    return earliest_date
+
 
 default_args = {
     'owner': 'airflow',
-    'start_date': datetime(2024, 7, 1),
-    'end_date': datetime(2024, 7, 8),
+    'start_date': earliest_date(),
     'retries': 1
     }
 
@@ -57,18 +79,18 @@ def logging_data_quality(total_rows, date):
     print(f"{NOW} === DATA QUALITY CHECK ===\n")
 
 
-def etl(date):
+def etl(execution_date):
     spark = spark_session()
 
-    print(f"{NOW} LOADING DATE: {date}\n")
-    card = spark.read.csv(f"{SOURCE}/Card.csv", header=True, sep=";")\
-                .where(f''' load_date = "{date}" ''')
+    print(f"{NOW} LOADING DATE: {execution_date}\n")
+    card = spark.read.csv(f"{SOURCE}/cards_{execution_date}.csv", header=True, sep=";")\
+                .where(f''' load_date = "{execution_date}" ''')
     
-    status_card = spark.read.csv(f"{SOURCE}/Status_card.csv", header=True, sep=";")\
-                        .where(f''' load_date = "{date}"  ''')
+    status_card = spark.read.csv(f"{SOURCE}/cards_status_{execution_date}.csv", header=True, sep=";")\
+                        .where(f''' load_date = "{execution_date}"  ''')
     
-    transactions = spark.read.csv(f"{SOURCE}/Transactions.csv", header=True, sep=";")\
-                        .where(f''' load_date = "{date}"  ''')
+    transactions = spark.read.csv(f"{SOURCE}/transactions_{execution_date}.csv", header=True, sep=";")\
+                        .where(f''' load_date = "{execution_date}"  ''')
     
     
     first_trx = transactions.groupBy('card_num')\
@@ -107,13 +129,13 @@ def etl(date):
                                     F.when(F.col('amt') > 300, True).otherwise(False))\
                     .withColumn('status_flag',
                                     F.when(F.col('status') == "выдана", True).otherwise(False))\
-                    .withColumn('partition_date', F.lit(date).cast('string').alias('partition_date'))\
-                    .withColumn('load_date', F.lit(date).cast('string').alias('load_date'))\
+                    .withColumn('partition_date', F.lit(execution_date).cast('string').alias('partition_date'))\
+                    .withColumn('load_date', F.lit(execution_date).cast('string').alias('load_date'))\
                     .drop('amt', 'status')
 
     datamart.write.mode("append").partitionBy('partition_date').csv(f'{DATA_LAKE}/debit_cards', header=True)
 
-    logging_data_quality(datamart.count(), date)
+    logging_data_quality(datamart.count(), execution_date)
     spark.stop()
     print(f"{NOW} LOADED!\n\n")
 
@@ -121,7 +143,7 @@ def etl(date):
 etl_to_data_lake = PythonOperator(
     task_id="etl_to_data_lake",
     python_callable=etl,
-    op_kwargs={'date': execution_date},
+    op_kwargs={'execution_date': "{{ ds }}"},
     dag=dag
 )
 
