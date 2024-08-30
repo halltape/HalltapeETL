@@ -20,4 +20,4 @@ existing_data AS (
 SELECT *
 FROM source_data
 
-WHERE cookie NOT IN (SELECT load_date FROM existing_data)  -- Добавляем только новые записи
+WHERE load_date NOT IN (SELECT load_date FROM existing_data)  -- Добавляем только новые записи
