@@ -1,32 +1,46 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from clickhouse_driver import Client
+from airflow.operators.bash import BashOperator
 from pyspark.sql import SparkSession
 from pyspark.sql import Row
 import pyspark.sql.functions as F
 from datetime import datetime
 import pandas as pd
-
+import os
+import re
 
 NOW = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 SOURCE = '/opt/synthetic_data'
 DATA_LAKE = '/opt/data_lake'
 
-CLICK_DB = 'datamart'
-TABLE = 'debit_cards'
-CLICKHOUSE_DATA_LAKE = '/var/lib/clickhouse/user_files/debit_cards/partition_date=*/part-*.csv'
+def earliest_date():
+    # Регулярное выражение для извлечения дат
+    pattern = r'cards_(\d{4})-(\d{2})-(\d{2})\.csv'
 
+    # Получение самой ранней даты из файлов
+    earliest_date = None
 
-client = Client(host='clickhouse', port=9000,
-                user='admin', password='admin')
+    # Проход по файлам в директории
+    for filename in os.listdir(SOURCE):
+        match = re.match(pattern, filename)
+        if match:
+            year, month, day = match.groups()
+            date_str = f"{year}-{month}-{day}"
+            date = datetime.strptime(date_str, '%Y-%m-%d')
 
+            # Сохраняем самую раннюю дату
+            if earliest_date is None or date < earliest_date:
+                earliest_date = date
 
-execution_date  = '{{ ds }}'
+    # Если дата не найдена, используем дату по умолчанию
+    if earliest_date is None:
+        earliest_date = datetime(2024, 8, 1)  # Например, 1 августа 2024
+    return earliest_date
+
 
 default_args = {
     'owner': 'airflow',
-    'start_date': datetime(2024, 7, 1),
-    'end_date': datetime(2024, 7, 8),
+    'start_date': earliest_date(),
     'retries': 1
     }
 
@@ -65,18 +79,18 @@ def logging_data_quality(total_rows, date):
     print(f"{NOW} === DATA QUALITY CHECK ===\n")
 
 
-def etl(date):
+def etl(execution_date):
     spark = spark_session()
 
-    print(f"{NOW} LOADING DATE: {date}\n")
-    card = spark.read.csv(f"{SOURCE}/card.csv", header=True, sep=";")\
-                .where(f''' load_date = "{date}" ''')
+    print(f"{NOW} LOADING DATE: {execution_date}\n")
+    card = spark.read.csv(f"{SOURCE}/cards_{execution_date}.csv", header=True, sep=";")\
+                .where(f''' load_date = "{execution_date}" ''')
     
-    status_card = spark.read.csv(f"{SOURCE}/Status_card.csv", header=True, sep=";")\
-                        .where(f''' load_date = "{date}"  ''')
+    status_card = spark.read.csv(f"{SOURCE}/cards_status_{execution_date}.csv", header=True, sep=";")\
+                        .where(f''' load_date = "{execution_date}"  ''')
     
-    transactions = spark.read.csv(f"{SOURCE}/transactions.csv", header=True, sep=";")\
-                        .where(f''' load_date = "{date}"  ''')
+    transactions = spark.read.csv(f"{SOURCE}/transactions_{execution_date}.csv", header=True, sep=";")\
+                        .where(f''' load_date = "{execution_date}"  ''')
     
     
     first_trx = transactions.groupBy('card_num')\
@@ -115,64 +129,27 @@ def etl(date):
                                     F.when(F.col('amt') > 300, True).otherwise(False))\
                     .withColumn('status_flag',
                                     F.when(F.col('status') == "выдана", True).otherwise(False))\
-                    .withColumn('partition_date', F.lit(date).cast('string').alias('partition_date'))\
-                    .withColumn('load_date', F.lit(date).cast('string').alias('load_date'))\
+                    .withColumn('partition_date', F.lit(execution_date).cast('string').alias('partition_date'))\
+                    .withColumn('load_date', F.lit(execution_date).cast('string').alias('load_date'))\
                     .drop('amt', 'status')
 
     datamart.write.mode("append").partitionBy('partition_date').csv(f'{DATA_LAKE}/debit_cards', header=True)
 
-    logging_data_quality(datamart.count(), date)
+    logging_data_quality(datamart.count(), execution_date)
     spark.stop()
     print(f"{NOW} LOADED!\n\n")
-
-
-def insert_into():
-
-    client.timeout = 3000
-    client.execute(f""" CREATE DATABASE IF NOT EXISTS {CLICK_DB} """)
-    print(f"{NOW} Clickhouse: Database {CLICK_DB} is ready\n\n")
-
-    client.execute(f""" CREATE TABLE IF NOT EXISTS {CLICK_DB}.{TABLE} (
-                            card_order_dt String,
-                            card_num String,
-                            cookie String,
-                            url String,
-                            transaction_level Boolean NOT NULL,
-                            status_flag Boolean NOT NULL,
-                            load_date Date NOT NULL
-                        ) ENGINE = MergeTree()
-                        PARTITION BY toYYYYMM(load_date)
-                        ORDER BY card_order_dt
-                    """)
-    print(f"{NOW} Clickhouse: Table {TABLE} is created\n\n")
-
-
-    client.execute(f"""
-                    INSERT INTO {CLICK_DB}.{TABLE} 
-                    SELECT *
-                    FROM file('{CLICKHOUSE_DATA_LAKE}', 'CSVWithNames',
-                        'card_order_dt String,
-                        card_num String,
-                        cookie String,
-                        url String,
-                        transaction_level Boolean,
-                        status_flag Boolean,
-                        load_date String');
-                """)
-
-    print(f"{NOW} Clickhouse: Data is inserted\n\n")
 
 
 etl_to_data_lake = PythonOperator(
     task_id="etl_to_data_lake",
     python_callable=etl,
-    op_kwargs={'date': execution_date},
+    op_kwargs={'execution_date': "{{ ds }}"},
     dag=dag
 )
 
-load_to_clickhouse = PythonOperator(
+load_to_clickhouse = BashOperator(
     task_id="load_to_clickhouse",
-    python_callable=insert_into,
+    bash_command='cd /opt/dbt_click && dbt run --target datamart -m datamart --vars "{partition_date: "{{ ds }}"}"',
     dag=dag
 )
 

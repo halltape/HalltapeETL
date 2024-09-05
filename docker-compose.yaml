@@ -13,13 +13,14 @@ x-airflow-common: &airflow-common
     _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-admin}
     _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-admin}
   volumes:
-    - ./data_lake:/opt/data_lake
-    - ./data_lake/monitoring:/opt/data_lake/monitoring
+    - ./clickhouse/user_files:/opt/data_lake
+    - ./clickhouse/user_files/monitoring:/opt/data_lake/monitoring
     - ./synthetic_data:/opt/synthetic_data
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
     - ./scripts:/opt/airflow/scripts
+    - ./dbt_click:/opt/dbt_click
   depends_on:
     postgres:
       condition: service_healthy
@@ -54,7 +55,7 @@ services:
       - "8123:8123"
       - "9000:9000"
     volumes:
-      - ./data_lake:/var/lib/clickhouse/user_files
+      - ./clickhouse:/var/lib/clickhouse
     networks:
       - all_in_one
 
@@ -132,7 +133,7 @@ services:
       - "4040:4040"
     volumes:
       - ./synthetic_data:/home/jovyan/source
-      - ./data_lake:/home/jovyan/data_lake
+      - ./clickhouse/user_files:/home/jovyan/data_lake
       - ./jupyter_notebook:/home/jovyan
     command: jupyter notebook --no-browser --NotebookApp.token='' --NotebookApp.password='' --ip='*' --allow-root
     environment:
@@ -144,6 +145,7 @@ services:
     
 volumes:
   postgres-db-volume:
+  clickhouse:
 
 networks:
   all_in_one:

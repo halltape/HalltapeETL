@@ -1,0 +1,37 @@
+name: 'dbt_click'
+version: '1.0.0'
+
+profile: 'dbt_click'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+  - "logs"
+
+vars:
+  clickhouse_data_lake_logs: '/var/lib/clickhouse/user_files/monitoring/logs_datamart.csv'
+  clickhouse_data_lake_mart: '/var/lib/clickhouse/user_files/debit_cards/partition_date={{ var("partition_date") }}/part-*.csv'
+
+models:
+  dbt_click:
+    monitoring:
+      +materialized: table
+      +partition_by: 
+        - datamart_name
+      +order_by: 
+        - created_at
+
+    datamart:
+      +materialized: table
+      +partition_by: 
+        load_date: toYYYYMM(load_date)
+      +order_by: 
+        - card_order_dt
+        
