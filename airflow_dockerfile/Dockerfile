@@ -1,3 +1,4 @@
+# TEST
 FROM apache/airflow:latest
 
 COPY requirements.txt /requirements.txt
