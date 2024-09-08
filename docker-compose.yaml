@@ -13,8 +13,8 @@ x-airflow-common: &airflow-common
     _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-admin}
     _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-admin}
   volumes:
-    - ./clickhouse/user_files:/opt/data_lake
-    - ./clickhouse/user_files/monitoring:/opt/data_lake/monitoring
+    - ./data_lake:/opt/data_lake
+    - ./data_lake/monitoring:/opt/data_lake/monitoring
     - ./synthetic_data:/opt/synthetic_data
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
@@ -56,6 +56,8 @@ services:
       - "9000:9000"
     volumes:
       - ./clickhouse:/var/lib/clickhouse
+      - ./data_lake:/opt/data_lake
+      - ./docker_related_config.xml:/etc/clickhouse-server/config.d/docker_related_config.xml
     networks:
       - all_in_one
 
@@ -133,7 +135,7 @@ services:
       - "4040:4040"
     volumes:
       - ./synthetic_data:/home/jovyan/source
-      - ./clickhouse/user_files:/home/jovyan/data_lake
+      - ./data_lake:/home/jovyan/data_lake
       - ./jupyter_notebook:/home/jovyan
     command: jupyter notebook --no-browser --NotebookApp.token='' --NotebookApp.password='' --ip='*' --allow-root
     environment:

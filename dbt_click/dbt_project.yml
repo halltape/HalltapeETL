@@ -16,8 +16,8 @@ clean-targets:
   - "logs"
 
 vars:
-  clickhouse_data_lake_logs: '/var/lib/clickhouse/user_files/monitoring/logs_datamart.csv'
-  clickhouse_data_lake_mart: '/var/lib/clickhouse/user_files/debit_cards/partition_date={{ var("partition_date") }}/part-*.csv'
+  clickhouse_data_lake_logs: '/opt/data_lake/monitoring/logs_datamart.csv'
+  clickhouse_data_lake_mart: '/opt/data_lake/debit_cards/partition_date={{ var("partition_date") }}/part-*.csv'
 
 models:
   dbt_click:
