@@ -11,13 +11,10 @@ WITH source_data AS (
         status_flag Boolean,
         load_date String')
 ),
-
 existing_data AS (
     SELECT *
     FROM {{ this }}  -- Существующая таблица
 )
-
 SELECT *
 FROM source_data
-
 WHERE load_date NOT IN (SELECT load_date FROM existing_data)  -- Добавляем только новые записи

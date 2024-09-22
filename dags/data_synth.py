@@ -8,6 +8,18 @@ from datetime import datetime, timedelta
 PATH = '/opt/synthetic_data'
 ROWS = 100
 
+default_args = {
+    'owner': 'airflow',
+    'start_date': datetime.now() - timedelta(weeks=1),
+    'retries': 1
+}
+
+dag = DAG(
+    dag_id="data_synth",
+    default_args=default_args,
+    schedule_interval='0 10 * * *'
+)
+
 def generate_card(execution_date, rows=ROWS):
     cards_data = []
     for _ in range(rows):
@@ -94,17 +106,6 @@ def generate_transactions(execution_date):
     transaction_df = pd.DataFrame(transaction_data)
     transaction_df.to_csv(f'{PATH}/transactions_{execution_date}.csv', index=False, sep=';')
 
-default_args = {
-    'owner': 'airflow',
-    'start_date': datetime(2024, 8, 1),
-    'retries': 1
-}
-
-dag = DAG(
-    dag_id="data_synth",
-    default_args=default_args,
-    schedule_interval='0 10 * * *'
-)
 
 synth_cards = PythonOperator(
     task_id="synth_cards",

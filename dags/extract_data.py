@@ -1,7 +1,7 @@
 from airflow import DAG
 from clickhouse_driver import Client
 from airflow.operators.python import PythonOperator
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import requests
 import json
@@ -12,7 +12,7 @@ client = Client(host='clickhouse', port=9000,
 
 dag = DAG(
     dag_id="halltape_etl",
-    start_date=datetime(2024,7,20),
+    start_date=datetime.now() - timedelta(weeks=1),
     schedule_interval="@daily"
 )
 
@@ -88,32 +88,3 @@ stage4 = PythonOperator(
 )
 
 stage1 >> stage2 >> stage3 >> stage4
-
-
-
-
-
-# CREATE TABLE raw.debit_card (
-#     card_order_dt String,
-#     card_num String,
-#     cookie String,
-#     url String,
-#     transaction_level Boolean NOT NULL,
-#     status_flag Boolean NOT NULL,
-#     load_date Date NOT NULL
-# ) ENGINE = MergeTree()
-# PARTITION BY toYYYYMM(load_date)
-# ORDER BY card_order_dt;
-
-
-
-# INSERT INTO raw.debit_card
-# SELECT *
-# FROM file('/var/lib/clickhouse/user_files/debit_card/partition_date=*/part-*.csv', 'CSVWithNames',
-#     'card_order_dt String,
-# 	card_num String,
-# 	cookie String,
-# 	url String,
-# 	transaction_level Boolean,
-# 	status_flag Boolean,
-# 	load_date String');
