@@ -8,8 +8,6 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE_DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW_CORE_LOAD_EXAMPLES: 'false'
     AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: 5
-    _AIRFLOW_DB_MIGRATE: 'true'
-    _AIRFLOW_WWW_USER_CREATE: 'true'
     _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-admin}
     _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-admin}
   volumes:
@@ -36,9 +34,14 @@ services:
       POSTGRES_DB: airflow
     ports:
       - "5432:5432"
+    command:
+      - "postgres"
+      - "-c"
+      - "work_mem=64MB"
     restart: always
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
+      - ./postgres:/docker-entrypoint-initdb.d/
     healthcheck:
       test: [ "CMD", "pg_isready", "-U", "airflow" ]
       interval: 5s
@@ -137,9 +140,6 @@ services:
       - ./data_lake:/home/jovyan/data_lake
       - ./jupyter_notebook:/home/jovyan
     command: jupyter notebook --no-browser --NotebookApp.token='' --NotebookApp.password='' --ip='*' --allow-root
-    environment:
-      - GRANT_SUDO=yes
-    user: root
     restart: always
     networks:
       - all_in_one
