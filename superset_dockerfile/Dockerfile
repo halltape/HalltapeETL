@@ -2,22 +2,23 @@ FROM apache/superset:latest
 
 USER root
 
+# Обновление pip
 RUN pip install --upgrade pip
 
 # Установка clickhouse коннектора
 RUN pip install clickhouse-connect
 
-# Установка Python-пакетов
-RUN pip install mysqlclient
-
 # Установка системных зависимостей
 RUN apt-get update && apt-get install -y \
     build-essential \
-    default-libmysqlclient-dev \
     libssl-dev \
     libffi-dev \
-    python3-dev 
+    python3-dev \
+    pkg-config && \
+    rm -rf /var/lib/apt/lists/*  # Очистка кэша apt
 
+# Установка Python-пакетов
+RUN pip install mysqlclient
 
 ENV ADMIN_USERNAME=${ADMIN_USERNAME}
 ENV ADMIN_EMAIL=${ADMIN_EMAIL}
