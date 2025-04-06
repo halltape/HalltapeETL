@@ -8,7 +8,7 @@ jupyter_notebook/*
 !jupyter_notebook/halltape_etl.ipynb
 
 superset_data/
-
+.idea/
 
 dags/.DS_Store
 
