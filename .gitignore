@@ -1,15 +1,12 @@
 logs/
 plugins/
 data_lake/
-
 synthetic_data/.ipynb_checkpoints
-
 jupyter_notebook/*
 !jupyter_notebook/halltape_etl.ipynb
-
 superset_data/
 .idea/
-
+dags/__pycache__/
+clickhouse/
 dags/.DS_Store
-
 .DS_Store

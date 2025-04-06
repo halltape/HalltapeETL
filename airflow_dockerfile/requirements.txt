@@ -4,3 +4,5 @@ requests==2.31.0
 pyspark
 dbt-core
 dbt-clickhouse
+faker
+psycopg2-binary
