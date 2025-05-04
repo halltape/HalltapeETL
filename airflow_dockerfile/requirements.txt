@@ -1,8 +1,9 @@
 airflow-providers-clickhouse==0.0.1
-pandas
+pandas>=2.0.0
 requests==2.31.0
-pyspark
-dbt-core
-dbt-clickhouse
-faker
-psycopg2-binary
+pyspark>=3.5.0
+dbt-core>=1.7.0
+dbt-clickhouse>=1.7.0
+faker>=20.0.0
+psycopg2-binary>=2.9.9
+asyncpg
