@@ -2,6 +2,7 @@ x-airflow-common: &airflow-common
   build:
     context: ./airflow_dockerfile
     dockerfile: Dockerfile
+  user: "${AIRFLOW_UID}:${AIRFLOW_GID}"
   environment:
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
     AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
@@ -153,28 +154,28 @@ services:
     networks:
       all_in_one:
 
-  broker:
+  kafka:
     image: confluentinc/cp-kafka:7.4.0
-    hostname: broker
-    container_name: broker
+    hostname: kafka
+    container_name: kafka
     ports:
-      - '29092:29092'
-      - '9092:9092'
-      - '9101:9101'
+      - '29093:29092'
+      - '9093:9092'
+      - '9094:9101'
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29093,PLAINTEXT_HOST://localhost:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
-      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_PORT: 9094
       KAFKA_JMX_HOSTNAME: localhost
     healthcheck:
-      test: nc -z localhost 9092 || exit -1
+      test: nc -z localhost 9093 || exit -1
       start_period: 15s
       interval: 5s
       timeout: 10s
@@ -189,62 +190,76 @@ services:
     ports:
       - "8082:8080"
     depends_on:
-      - broker
+      - kafka
     environment:
       KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: broker:29092
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29093
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
-    networks:
-      - all_in_one
-
-  debezium:
-    image: debezium/connect:3.0.0.Final
-    container_name: debezium
-    hostname: debezium
-    depends_on:
-      postgres:
-        condition: service_healthy
-      broker:
-        condition: service_healthy
-    ports:
-      - '8093:8083'
-    environment:
-      BOOTSTRAP_SERVERS: broker:29092
-      CONNECT_REST_ADVERTISED_HOST_NAME: debezium
-      GROUP_ID: 1
-      CONFIG_STORAGE_TOPIC: connect_configs
-      STATUS_STORAGE_TOPIC: connect_statuses
-      OFFSET_STORAGE_TOPIC: connect_offsets
-      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
-      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
-      ENABLE_DEBEZIUM_SCRIPTING: 'true'
-    healthcheck:
-      test:
-        [ 'CMD', 'curl', '--silent', '--fail', '-X', 'GET', 'http://localhost:8083/connectors', ]
-      start_period: 10s
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: connect
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka-connect:8083
     networks:
       all_in_one:
 
-  debezium-ui:
-    image: debezium/debezium-ui:2.1.2.Final
-    container_name: debezium-ui
-    hostname: debezium-ui
-    depends_on:
-      debezium:
-        condition: service_healthy
-    ports:
-      - '8081:8080'
-    environment:
-      KAFKA_CONNECT_URIS: http://debezium:8083
-    networks:
-      all_in_one:
+
+  kafka-connect:
+      build:
+        context: ./debezium-jmx-exporter
+        args:
+          JMX_AGENT_VERSION: 0.15.0
+      container_name: kafka-connect
+      restart: unless-stopped
+      ports:
+        - "8083:8083"
+        - "1976:1976"
+      depends_on:
+        kafka:
+          condition: service_healthy
+      environment:
+        BOOTSTRAP_SERVERS: kafka:29093
+        GROUP_ID: 1
+        CONFIG_STORAGE_TOPIC: kafka_connect_configs
+        OFFSET_STORAGE_TOPIC: kafka_connect_offsets
+        STATUS_STORAGE_TOPIC: kafka_connect_statuses
+        KAFKA_OPTS: -javaagent:/kafka/etc/jmx_prometheus_javaagent.jar=8080:/kafka/etc/config.yml
+        JMXHOST: localhost
+        JMXPORT: 1976
+      healthcheck:
+            test: [ "CMD-SHELL", "curl -sSf http://localhost:8083/connectors || exit 1" ]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+      networks:
+        all_in_one:
+
+  prometheus:
+      image: prom/prometheus:v2.43.0
+      container_name: prometheus
+      restart: unless-stopped
+      ports:
+        - "9090:9090"
+      depends_on:
+        kafka-connect:
+          condition: service_healthy
+      volumes:
+        - ./debezium-prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      networks:
+        all_in_one:
+
+  grafana:
+      build:
+        context: ./debezium-grafana
+      container_name: grafana
+      restart: unless-stopped
+      ports:
+        - "3000:3000"
+      environment:
+        DS_PROMETHEUS: prometheus
 
 volumes:
   postgres-db-volume:
   clickhouse:
 
+
 networks:
   all_in_one:
+    driver: bridge
