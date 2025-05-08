@@ -22,6 +22,6 @@ superset run -p 8088 -h 0.0.0.0 --with-threads --reload --debugger
 # superset dbs add \
 #   --database-name box_office \
 #   --sqlalchemy-uri postgresql+psycopg2://airflow:airflow@postgres:5432/box_office \
-#   --configuration-method sql \
+#   --configuration-method src \
 #   --username admin \
 #   --password admin
