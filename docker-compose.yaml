@@ -247,38 +247,32 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - ./s3_storage:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/ready" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     networks:
       - all_in_one
 
   create-bucket:
     image: minio/mc
-    depends_on:
-      - minio
     entrypoint: >
       /bin/sh -c "
       until mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; do
         echo 'Waiting for MinIO...';
         sleep 5;
       done;
-
-      # Бакет 1: данные
-      mc mb -p local/prod/raw || true;
-      mc mb -p local/prod/сlean || true;
-      mc mb -p local/prod/mart || true;
-
-      # Бакет 2: ноутбуки и тестовые файлы
-      mc mb -p local/dev || true;
-
-      # Бакет 3: качество данных
-      mc mb -p local/quality || true;
-
-      # Публичные политики
-      mc policy set public local/data/raw || true;
-      mc policy set public local/data/сlean || true;
-      mc policy set public local/data/mart || true;
-      mc policy set public local/dev || true;
-      mc policy set public local/quality || true;
+      
+      mc mb -p local/${MINIO_PROD_BUCKET_NAME} || true;
+      mc policy set public local/${MINIO_PROD_BUCKET_NAME} || true;
+      
+      mc mb -p local/${MINIO_DEV_BUCKET_NAME} || true;
+      mc policy set public local/${MINIO_DEV_BUCKET_NAME} || true;
       "
+    depends_on:
+      minio:
+        condition: service_healthy
     networks:
       - all_in_one
 

@@ -28,7 +28,7 @@ Content-Type: application/json
   "heartbeat.interval.ms": "10000",
   "heartbeat.action.query": "INSERT INTO public.dbz_heartbeat (id, ts) VALUES (1, NOW()) ON CONFLICT(id) DO UPDATE SET ts=EXCLUDED.ts;",
 
-  "topic.prefix": "orders.backend",
+  "topic.prefix": "backend",
   "tombstones.on.delete": "false",
 
   "key.converter": "org.apache.kafka.connect.json.JsonConverter",

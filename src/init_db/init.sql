@@ -13,6 +13,12 @@ CREATE TABLE IF NOT EXISTS public.dbz_heartbeat (
     ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS public.app_installs (
+    user_id INTEGER,
+    os TEXT,
+    ts TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS public.order_events (
             id SERIAL PRIMARY KEY,
             order_id INTEGER NOT NULL,

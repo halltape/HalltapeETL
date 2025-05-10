@@ -15,12 +15,12 @@ default_args = {
 }
 
 dag = DAG(
-    dag_id="Load_Kafka__order_events",
+    dag_id="Load_JDBC__app_installs",
     default_args=default_args,
-    schedule_interval='@once',
+    schedule_interval="*/1 * * * *",
     description="Spark Submit",
     catchup=False,
-    tags=['spark', 'streaming']
+    tags=['spark', 'batch']
 )
 
 
@@ -40,8 +40,8 @@ def create_spark_connection(session: Session = None, **kwargs):
         conn_type="spark",
         host="local",
         extra='''{
-                    "spark-binary": "spark-submit",
-                    "deploy-mode": "client"
+                "spark-binary": "spark-submit",
+                "deploy-mode": "client"
                 }'''
     )
 
@@ -56,14 +56,16 @@ create_spark_connection = PythonOperator(
     dag=dag
 )
 
-stream_kafka_to_s3 = SparkSubmitOperator(
-    task_id='spark_stream_kafka_to_s3',
-    application='/opt/airflow/scripts/extract__order_events.py',  # путь до spark-скрипта
+jdbc_to_s3 = SparkSubmitOperator(
+    task_id='spark_jdbc_to_s3',
+    application='/opt/airflow/scripts/extract__app_installs.py',
     conn_id='spark_default',
     application_args=[
-        '--kafka-topic', 'backend.public.order_events',
-        '--kafka-bootstrap', 'kafka:29093',
-        '--s3-path', f's3a://{os.getenv("MINIO_PROD_BUCKET_NAME")}/stage/order_events/'
+        '--jdbc-url', 'jdbc:postgresql://postgres:5432/backend',
+        '--db-user', os.getenv('POSTGRES_USER'),
+        '--db-password', os.getenv('POSTGRES_PASSWORD'),
+        '--table-name', 'public.app_installs',
+        '--s3-path', f's3a://{os.getenv("MINIO_PROD_BUCKET_NAME")}/stage/app_installs/'
     ],
     conf={
         "spark.executor.instances": "1",
@@ -77,14 +79,11 @@ stream_kafka_to_s3 = SparkSubmitOperator(
         "spark.hadoop.fs.s3a.connection.ssl.enabled": "false"
     },
     packages=(
-        "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0,"
         "org.apache.hadoop:hadoop-aws:3.3.2,"
-        "com.amazonaws:aws-java-sdk-bundle:1.11.1026"
+        "com.amazonaws:aws-java-sdk-bundle:1.11.1026,"
+        "org.postgresql:postgresql:42.5.0"
     ),
     dag=dag
 )
 
-create_spark_connection >> stream_kafka_to_s3
-
-# "spark.hadoop.fs.s3a.access.key": os.getenv("AWS_ACCESS_KEY_ID"),
-# "spark.hadoop.fs.s3a.secret.key": os.getenv("AWS_SECRET_ACCESS_KEY"),
+create_spark_connection >> jdbc_to_s3
