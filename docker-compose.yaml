@@ -260,8 +260,24 @@ services:
         echo 'Waiting for MinIO...';
         sleep 5;
       done;
-      mc mb -p local/${MINIO_BUCKET_NAME} || true;
-      mc policy set public local/${MINIO_BUCKET_NAME} || true;
+
+      # Бакет 1: данные
+      mc mb -p local/prod/raw || true;
+      mc mb -p local/prod/сlean || true;
+      mc mb -p local/prod/mart || true;
+
+      # Бакет 2: ноутбуки и тестовые файлы
+      mc mb -p local/dev || true;
+
+      # Бакет 3: качество данных
+      mc mb -p local/quality || true;
+
+      # Публичные политики
+      mc policy set public local/data/raw || true;
+      mc policy set public local/data/сlean || true;
+      mc policy set public local/data/mart || true;
+      mc policy set public local/dev || true;
+      mc policy set public local/quality || true;
       "
     networks:
       - all_in_one
