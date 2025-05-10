@@ -1,4 +1,5 @@
 airflow-providers-clickhouse==0.0.1
+apache-airflow-providers-apache-spark==4.11.1
 pandas
 requests==2.31.0
 pyspark

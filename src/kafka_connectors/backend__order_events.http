@@ -1,3 +1,7 @@
+### Update connector
+PUT http://localhost:8083/connectors/backend/config
+Content-Type: application/json
+
 {
   "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
   "plugin.name": "pgoutput",
