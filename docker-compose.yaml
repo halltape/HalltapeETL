@@ -3,6 +3,8 @@ x-airflow-common: &airflow-common
     context: ./airflow_dockerfile
     dockerfile: Dockerfile
   user: "${AIRFLOW_UID}:${AIRFLOW_GID}"
+  env_file:
+    - .env
   environment:
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
     AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
@@ -92,6 +94,8 @@ services:
     <<: *airflow-common
     container_name: af-worker
     command: celery worker
+    ports:
+      - "4041:4041"
     restart: always
 
   airflow-init:

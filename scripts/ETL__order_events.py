@@ -11,6 +11,8 @@ args = parser.parse_args()
 
 spark = SparkSession.builder \
     .appName("KafkaToS3OrderEvents") \
+    .config("spark.ui.port", "4041") \
+    .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0") \
     .getOrCreate()
 
 # Чтение из Kafka
@@ -33,24 +35,22 @@ sample_json = '''{
 }'''
 
 schema = schema_of_json(sample_json)
-print(f'schema = {schema}')
 
 json_df = df.selectExpr("CAST(value AS STRING) as json_str") \
     .select(from_json("json_str", schema).alias("data")) \
     .select("data.payload.*")
 
-print(f'json_df = {json_df}')
 
 # Преобразуем ts (Unix → UTC Timestamp → Date)
 processed_df = json_df \
     .withColumn("ts_utc", from_unixtime(col("ts")).cast("timestamp")) \
     .withColumn("event_date", to_date(col("ts_utc")))  # Для партиций
 
-print(f'processed_df = {processed_df}')
 
 # Запись в S3 с партиционированием
 query = processed_df.writeStream \
     .format("parquet") \
+    .queryName("order_events") \
     .option("path", args.s3_path) \
     .option("checkpointLocation", args.s3_path + "/_checkpoint/") \
     .partitionBy("event_date") \

@@ -1,3 +1,4 @@
+import os
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.models.connection import Connection
@@ -16,12 +17,12 @@ default_args = {
 }
 
 dag = DAG(
-    dag_id="order_status_simulation_dag",
+    dag_id="Create_Postgres__order_events",
     default_args=default_args,
     schedule_interval="* * * * *",
     description="Симуляция статусов заказов",
     catchup=False,
-    tags=['technical', 'order', 'status']
+    tags=['technical', 'order_events']
 )
 
 
@@ -39,8 +40,8 @@ def create_connection_func(session: Session = None, **kwargs):
         conn_id=conn_id,
         conn_type="postgres",
         host="postgres",
-        login="airflow",
-        password="airflow",
+        login=os.getenv("POSTGRES_USER"),
+        password=os.getenv("POSTGRES_PASSWORD"),
         schema="backend",
         port=5432
     )
