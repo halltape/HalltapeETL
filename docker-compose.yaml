@@ -231,6 +231,37 @@ services:
       networks:
         all_in_one:
 
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9001:9001"  # UI
+      - "9002:9000"  # API
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    volumes:
+      - ./s3_storage:/data
+    networks:
+      - all_in_one
+
+  create-bucket:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; do
+        echo 'Waiting for MinIO...';
+        sleep 5;
+      done;
+      mc mb -p local/${MINIO_BUCKET_NAME} || true;
+      mc policy set public local/${MINIO_BUCKET_NAME} || true;
+      "
+    networks:
+      - all_in_one
+
   prometheus:
       image: prom/prometheus:v2.43.0
       container_name: prometheus

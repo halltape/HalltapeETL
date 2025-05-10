@@ -1,6 +1,6 @@
-CREATE DATABASE analytics;
+CREATE DATABASE backend_db;
 
-\connect analytics;
+\connect backend;
 
 CREATE TABLE IF NOT EXISTS public.dbz_signal (
     id   VARCHAR(64),
@@ -13,11 +13,11 @@ CREATE TABLE IF NOT EXISTS public.dbz_heartbeat (
     ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS public.backend_events (
+CREATE TABLE IF NOT EXISTS public.order_events (
             id SERIAL PRIMARY KEY,
-            user_id INTEGER NOT NULL,
-            event_type VARCHAR(50) NOT NULL,
+            order_id INTEGER NOT NULL,
+            status VARCHAR(50) NOT NULL,
             ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-ALTER TABLE public.backend_events REPLICA IDENTITY FULL;
+ALTER TABLE public.order_events REPLICA IDENTITY FULL;

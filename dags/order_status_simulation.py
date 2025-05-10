@@ -16,19 +16,19 @@ default_args = {
 }
 
 dag = DAG(
-    dag_id="tech_click_events_dag",
+    dag_id="order_status_simulation_dag",
     default_args=default_args,
     schedule_interval="* * * * *",
-    description='Симуляция наполнения таблицы на backend',
+    description="Симуляция статусов заказов",
     catchup=False,
-    tags=['click', 'events']
+    tags=['technical', 'order', 'status']
 )
 
 
 
 @provide_session
 def create_connection_func(session: Session = None, **kwargs):
-    conn_id = "analytics_db"
+    conn_id = "backend_db"
 
     existing_conn = session.query(Connection).filter(Connection.conn_id == conn_id).first()
     if existing_conn:
@@ -41,43 +41,44 @@ def create_connection_func(session: Session = None, **kwargs):
         host="postgres",
         login="airflow",
         password="airflow",
-        schema="analytics",
+        schema="backend",
         port=5432
     )
     session.add(new_conn)
     session.commit()
 
 
-def generate_click_events(**kwargs):
+def generate_order_events(**kwargs):
+    statuses = ["created", "processing", "shipped", "delivered", "cancelled"]
     events = []
     for _ in range(4):
         event = {
-            "user_id": random.randint(1, 100),
-            "event_type": random.choice(["click", "scroll", "hover"]),
+            "order_id": random.randint(1000, 9999),
+            "status": random.choice(statuses),
             "ts": datetime.now().isoformat()
         }
         events.append(event)
     kwargs['ti'].xcom_push(key='events', value=events)
 
 
-def insert_click_events_func(**kwargs):
-    hook = PostgresHook(postgres_conn_id="analytics_db")
-    events = kwargs['ti'].xcom_pull(key='events', task_ids='generate_click_events')
+def insert_order_events_func(**kwargs):
+    hook = PostgresHook(postgres_conn_id="backend_db")
+    events = kwargs['ti'].xcom_pull(key='events', task_ids='generate_order_events')
     for e in events:
         hook.run(f"""
-            INSERT INTO public.backend_events (user_id, event_type, ts)
-            VALUES ({e["user_id"]}, '{e["event_type"]}', '{e["ts"]}');
+            INSERT INTO public.order_events (order_id, status, ts)
+            VALUES ({e["order_id"]}, '{e["status"]}', '{e["ts"]}');
         """)
 
 
-def modify_click_events_func(**kwargs):
-    hook = PostgresHook(postgres_conn_id="analytics_db")
+def update_order_events_func(**kwargs):
+    hook = PostgresHook(postgres_conn_id="backend_db")
 
     # Удалим одну строку (последнюю по времени)
     hook.run("""
-        DELETE FROM public.backend_events
+        DELETE FROM public.order_events
         WHERE id = (
-            SELECT id FROM public.backend_events
+            SELECT id FROM public.order_events
             ORDER BY ts DESC
             LIMIT 1
         );
@@ -85,10 +86,11 @@ def modify_click_events_func(**kwargs):
 
     # Обновим одну строку (самую старую)
     hook.run("""
-        UPDATE public.backend_events
-        SET event_type = 'updated_click', ts = CURRENT_TIMESTAMP
+        UPDATE public.order_events
+        SET status = 'cancelled', ts = CURRENT_TIMESTAMP
         WHERE id = (
-            SELECT id FROM public.backend_events
+            SELECT id FROM public.order_events
+            WHERE status != 'cancelled'
             ORDER BY ts ASC
             LIMIT 1
         );
@@ -101,24 +103,24 @@ create_connection = PythonOperator(
     dag=dag
 )
 
-generate_click_events = PythonOperator(
-    task_id="generate_click_events",
-    python_callable=generate_click_events,
+generate_order_events = PythonOperator(
+    task_id="generate_order_events",
+    python_callable=generate_order_events,
     dag=dag,
 )
 
-insert_click_events = PythonOperator(
-    task_id="insert_click_events",
-    python_callable=insert_click_events_func,
+insert_order_events = PythonOperator(
+    task_id="insert_order_events",
+    python_callable=insert_order_events_func,
     provide_context=True,
     dag=dag,
 )
 
-modify_click_events = PythonOperator(
-    task_id="modify_click_events",
-    python_callable=modify_click_events_func,
+modify_order_events = PythonOperator(
+    task_id="modify_order_events",
+    python_callable=update_order_events_func,
     dag=dag,
 )
 
 
-create_connection >> generate_click_events >> insert_click_events >> modify_click_events
+create_connection >> generate_order_events >> insert_order_events >> modify_order_events
