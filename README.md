@@ -1,7 +1,7 @@
 # HalltapeETL
 
 <p align="center">
-    <img src="png/halltape_etl.jpg" alt="nf" width="600"/>
+    <img src="png/main.png" alt="nf" width="600"/>
 </p>
 
 Проект ETL (Extract, Transform, Load) для обработки и анализа данных в реальном времени с использованием современного стека технологий.
