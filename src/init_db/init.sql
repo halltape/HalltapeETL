@@ -1,4 +1,4 @@
-CREATE DATABASE backend_db;
+CREATE DATABASE backend;
 
 \connect backend;
 

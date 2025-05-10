@@ -1,29 +1,37 @@
 {
-	"connector.class": "io.debezium.connector.postgresql.PostgresConnector",
-	"slot.name": "backend_events_slot",
-	"publication.name": "analytics_publication",
-	"signal.enabled.channels": "source,kafka",
-	"tombstones.on.delete": "false",
-	"topic.prefix": "analytics.backend",
-	"heartbeat.action.query": "INSERT INTO public.dbz_heartbeat (id, ts) VALUES (1, NOW()) ON CONFLICT(id) DO UPDATE SET ts=EXCLUDED.ts;",
-	"signal.data.collection": "public.dbz_signal",
-	"value.converter": "org.apache.kafka.connect.json.JsonConverter",
-	"key.converter": "org.apache.kafka.connect.json.JsonConverter",
-	"publication.autocreate.mode": "filtered",
-	"database.user": "airflow",
-	"database.dbname": "analytics",
-	"signal.kafka.bootstrap.servers": "kafka:29092",
-	"signal.kafka.topic": "analytics.signal",
-	"database.server.name": "postgres",
-	"heartbeat.interval.ms": "10000",
-	"plugin.name": "pgoutput",
-	"database.port": "5432",
-	"key.converter.schemas.enable": "false",
-	"database.hostname": "postgres",
-	"database.password": "airflow",
-	"value.converter.schemas.enable": "false",
-	"name": "backend_events",
-	"include.before.state": "true",
-	"table.include.list": "public.dbz_signal,public.dbz_heartbeat,public.backend_events",
-	"snapshot.mode": "no_data"
+  "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+  "plugin.name": "pgoutput",
+
+  "database.hostname": "postgres",
+  "database.port": "5432",
+  "database.user": "airflow",
+  "database.password": "airflow",
+  "database.dbname": "backend",
+  "database.server.name": "postgres",
+
+  "slot.name": "order_events_slot",
+  "publication.name": "backend_publication",
+  "publication.autocreate.mode": "filtered",
+
+  "table.include.list": "public.dbz_signal,public.dbz_heartbeat,public.order_events",
+  "snapshot.mode": "no_data",
+
+  "signal.enabled.channels": "source,kafka",
+  "signal.data.collection": "public.dbz_signal",
+  "signal.kafka.bootstrap.servers": "kafka:29092",
+  "signal.kafka.topic": "backend.signal",
+
+  "heartbeat.interval.ms": "10000",
+  "heartbeat.action.query": "INSERT INTO public.dbz_heartbeat (id, ts) VALUES (1, NOW()) ON CONFLICT(id) DO UPDATE SET ts=EXCLUDED.ts;",
+
+  "topic.prefix": "orders.backend",
+  "tombstones.on.delete": "false",
+
+  "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+  "key.converter.schemas.enable": "false",
+
+  "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+  "value.converter.schemas.enable": "false",
+
+  "include.before.state": "true"
 }

@@ -74,7 +74,7 @@ def insert_order_events_func(**kwargs):
 def update_order_events_func(**kwargs):
     hook = PostgresHook(postgres_conn_id="backend_db")
 
-    # Удалим одну строку (последнюю по времени)
+    # Удалим одну строку (крайнюю по времени)
     hook.run("""
         DELETE FROM public.order_events
         WHERE id = (
@@ -84,16 +84,19 @@ def update_order_events_func(**kwargs):
         );
     """)
 
-    # Обновим одну строку (самую старую)
+    # Обновим одну строку (самую новую)
     hook.run("""
         UPDATE public.order_events
-        SET status = 'cancelled', ts = CURRENT_TIMESTAMP
-        WHERE id = (
-            SELECT id FROM public.order_events
-            WHERE status != 'cancelled'
-            ORDER BY ts ASC
-            LIMIT 1
-        );
+        SET status =
+            CASE
+                WHEN status = 'created' THEN 'processing'
+                WHEN status = 'processing' THEN 'shipped'
+                WHEN status = 'shipped' THEN 'delivered'
+                ELSE status
+            END,
+            ts = CURRENT_TIMESTAMP
+        WHERE status IN ('created', 'processing', 'shipped')
+        AND id % 5 = 0;
     """)
 
 
