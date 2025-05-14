@@ -7,7 +7,7 @@ import faker
 import random
 
 default_args = {
-    'owner': 'halltape',
+    'owner': 'airflow',
     'start_date': datetime.now(),
     'retries': 1,
     'retry_delay': timedelta(minutes=5)

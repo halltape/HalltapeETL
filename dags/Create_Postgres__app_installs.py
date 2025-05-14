@@ -6,7 +6,7 @@ import random
 from datetime import datetime
 
 default_args = {
-    'owner': 'airflow',
+    'owner': 'creator',
     'start_date': days_ago(1),
     'retries': 1
 }

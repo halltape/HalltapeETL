@@ -119,6 +119,12 @@ services:
             --conn-password "${POSTGRES_PASSWORD}" \
             --conn-schema 'backend' \
             --conn-port 5432
+        
+          airflow connections add 'minios3_conn' \
+            --conn-type 'aws' \
+            --conn-login "${MINIO_ROOT_USER}" \
+            --conn-password "${MINIO_ROOT_PASSWORD}" \
+            --conn-extra '{"endpoint_url": "http://minio:9000"}'
 
   superset:
     container_name: superset
