@@ -1,9 +1,5 @@
-import os
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from airflow.models.connection import Connection
-from airflow.utils.session import provide_session
-from airflow.settings import Session
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils.dates import days_ago
 import random

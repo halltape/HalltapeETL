@@ -2,10 +2,6 @@ import os
 from airflow import DAG
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.utils.dates import days_ago
-from airflow.operators.python import PythonOperator
-from airflow.models import Connection
-from airflow.utils.session import provide_session
-from sqlalchemy.orm import Session
 
 
 default_args = {
