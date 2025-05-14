@@ -24,38 +24,6 @@ dag = DAG(
 )
 
 
-@provide_session
-def create_spark_connection(session: Session = None, **kwargs):
-    conn_id = "spark_default"
-
-    # Удаляем, если уже есть
-    existing_conn = session.query(Connection).filter(Connection.conn_id == conn_id).first()
-    if existing_conn:
-        session.delete(existing_conn)
-        session.commit()
-
-    # Создаем новое подключение
-    new_conn = Connection(
-        conn_id=conn_id,
-        conn_type="spark",
-        host="local",
-        extra='''{
-                "spark-binary": "spark-submit",
-                "deploy-mode": "client"
-                }'''
-    )
-
-    session.add(new_conn)
-    session.commit()
-
-
-
-create_spark_connection = PythonOperator(
-    task_id="create_spark_connection",
-    python_callable=create_spark_connection,
-    dag=dag
-)
-
 jdbc_to_s3 = SparkSubmitOperator(
     task_id='spark_jdbc_to_s3',
     application='/opt/airflow/scripts/extract__app_installs.py',
@@ -86,4 +54,4 @@ jdbc_to_s3 = SparkSubmitOperator(
     dag=dag
 )
 
-create_spark_connection >> jdbc_to_s3
+jdbc_to_s3

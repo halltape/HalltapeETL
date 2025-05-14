@@ -24,26 +24,6 @@ dag = DAG(
     tags=['technical', 'app_installs']
 )
 
-@provide_session
-def create_connection_func(session: Session = None, **kwargs):
-    conn_id = "backend_db"
-
-    existing_conn = session.query(Connection).filter(Connection.conn_id == conn_id).first()
-    if existing_conn:
-        session.delete(existing_conn)
-        session.commit()
-
-    new_conn = Connection(
-        conn_id=conn_id,
-        conn_type="postgres",
-        host="postgres",
-        login=os.getenv("POSTGRES_USER"),
-        password=os.getenv("POSTGRES_PASSWORD"),
-        schema="backend",
-        port=5432
-    )
-    session.add(new_conn)
-    session.commit()
 
 def generate_app_installs(**kwargs):
     os_variants = ["iOS", "Android"]
@@ -66,11 +46,6 @@ def insert_app_installs_func(**kwargs):
             VALUES ({i["user_id"]}, '{i["os"]}', '{i["ts"]}');
         """)
 
-create_connection = PythonOperator(
-    task_id="create_postgres_connection",
-    python_callable=create_connection_func,
-    dag=dag
-)
 
 generate_app_installs = PythonOperator(
     task_id="generate_app_installs",
@@ -85,4 +60,4 @@ insert_app_installs = PythonOperator(
     dag=dag,
 )
 
-create_connection >> generate_app_installs >> insert_app_installs
+generate_app_installs >> insert_app_installs

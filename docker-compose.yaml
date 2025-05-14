@@ -101,7 +101,24 @@ services:
   airflow-init:
     <<: *airflow-common
     container_name: airflow-init
-    command: version
+    command:
+      - bash
+      - -c
+      - |
+          echo "Airflow version"
+          airflow version
+          airflow connections add 'spark_default' \
+            --conn-type 'spark' \
+            --conn-host 'local' \
+            --conn-extra '{"spark-home": "/opt/spark", "spark-binary": "spark-submit", "deploy-mode": "local"}'
+
+          airflow connections add 'backend_db' \
+            --conn-type 'postgres' \
+            --conn-host 'postgres' \
+            --conn-login "${POSTGRES_USER}" \
+            --conn-password "${POSTGRES_PASSWORD}" \
+            --conn-schema 'backend' \
+            --conn-port 5432
 
   superset:
     container_name: superset

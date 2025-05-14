@@ -26,29 +26,6 @@ dag = DAG(
 )
 
 
-
-@provide_session
-def create_connection_func(session: Session = None, **kwargs):
-    conn_id = "backend_db"
-
-    existing_conn = session.query(Connection).filter(Connection.conn_id == conn_id).first()
-    if existing_conn:
-        session.delete(existing_conn)
-        session.commit()
-
-    new_conn = Connection(
-        conn_id=conn_id,
-        conn_type="postgres",
-        host="postgres",
-        login=os.getenv("POSTGRES_USER"),
-        password=os.getenv("POSTGRES_PASSWORD"),
-        schema="backend",
-        port=5432
-    )
-    session.add(new_conn)
-    session.commit()
-
-
 def generate_order_events(**kwargs):
     statuses = ["created", "processing", "shipped", "delivered", "cancelled"]
     events = []
@@ -101,12 +78,6 @@ def update_order_events_func(**kwargs):
     """)
 
 
-create_connection = PythonOperator(
-    task_id="create_debezium_db_connection",
-    python_callable=create_connection_func,
-    dag=dag
-)
-
 generate_order_events = PythonOperator(
     task_id="generate_order_events",
     python_callable=generate_order_events,
@@ -127,4 +98,4 @@ modify_order_events = PythonOperator(
 )
 
 
-create_connection >> generate_order_events >> insert_order_events >> modify_order_events
+generate_order_events >> insert_order_events >> modify_order_events

@@ -24,38 +24,6 @@ dag = DAG(
 )
 
 
-@provide_session
-def create_spark_connection(session: Session = None, **kwargs):
-    conn_id = "spark_default"
-
-    # Удаляем, если уже есть
-    existing_conn = session.query(Connection).filter(Connection.conn_id == conn_id).first()
-    if existing_conn:
-        session.delete(existing_conn)
-        session.commit()
-
-    # Создаем новое подключение
-    new_conn = Connection(
-        conn_id=conn_id,
-        conn_type="spark",
-        host="local",
-        extra='''{
-                    "spark-binary": "spark-submit",
-                    "deploy-mode": "client"
-                }'''
-    )
-
-    session.add(new_conn)
-    session.commit()
-
-
-
-create_spark_connection = PythonOperator(
-    task_id="create_spark_connection",
-    python_callable=create_spark_connection,
-    dag=dag
-)
-
 stream_kafka_to_s3 = SparkSubmitOperator(
     task_id='spark_stream_kafka_to_s3',
     application='/opt/airflow/scripts/extract__order_events.py',  # путь до spark-скрипта
@@ -84,7 +52,7 @@ stream_kafka_to_s3 = SparkSubmitOperator(
     dag=dag
 )
 
-create_spark_connection >> stream_kafka_to_s3
+stream_kafka_to_s3
 
 # "spark.hadoop.fs.s3a.access.key": os.getenv("AWS_ACCESS_KEY_ID"),
 # "spark.hadoop.fs.s3a.secret.key": os.getenv("AWS_SECRET_ACCESS_KEY"),
