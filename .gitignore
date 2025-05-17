@@ -3,7 +3,7 @@ plugins/
 data_lake/
 synthetic_data/.ipynb_checkpoints
 jupyter_notebook/*
-!jupyter_notebook/halltape_etl.ipynb
+!jupyter_notebook/spark_submit.ipynb
 superset_data/
 .idea/
 dags/__pycache__/

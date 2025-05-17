@@ -25,7 +25,7 @@ def fetch_github_and_upload_s3hook():
 
         # Генерируем имя файла
         timestamp = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
-        filename = f"github/events_{timestamp}.json"
+        filename = f"api/github/events_{timestamp}.json"
 
         # Используем S3Hook
         hook = S3Hook(aws_conn_id='minios3_conn')

@@ -26,7 +26,7 @@ def fetch_weather_and_upload_s3hook():
 
     # Генерируем имя файла
     timestamp = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
-    filename = f"weather/moscow_{timestamp}.json"
+    filename = f"api/weather/moscow_{timestamp}.json"
 
     # Используем S3Hook
     hook = S3Hook(aws_conn_id='minios3_conn')
@@ -37,7 +37,7 @@ def fetch_weather_and_upload_s3hook():
         replace=True
     )
 
-    print(f"Uploaded to s3://prod/{filename}")
+    print(f"Uploaded to s3://prod/api/{filename}")
 
 
 default_args = {

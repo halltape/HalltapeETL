@@ -11,23 +11,25 @@ default_args = {
 }
 
 dag = DAG(
-    dag_id="Load_Kafka__order_events",
+    dag_id="Load_JDBC__regions",
     default_args=default_args,
-    schedule_interval='@once',
-    description="Spark Submit",
+    schedule_interval="00 10 * * *",
+    description="Spark Submit Full",
     catchup=False,
-    tags=['spark', 'streaming']
+    tags=['spark', 'batch']
 )
 
 
-stream_kafka_to_s3 = SparkSubmitOperator(
-    task_id='spark_stream_kafka_to_s3',
-    application='/opt/airflow/scripts/load/load__order_events.py',  # путь до spark-скрипта
+jdbc_to_s3 = SparkSubmitOperator(
+    task_id='spark_jdbc_to_s3',
+    application='/opt/airflow/scripts/load/load__full_refresh.py',
     conn_id='spark_default',
     application_args=[
-        '--kafka-topic', 'backend.public.order_events',
-        '--kafka-bootstrap', 'kafka:29093',
-        '--s3-path', f's3a://{os.getenv("MINIO_PROD_BUCKET_NAME")}/stream/order_events/'
+        '--jdbc-url', 'jdbc:postgresql://postgres:5432/backend',
+        '--db-user', os.getenv('POSTGRES_USER'),
+        '--db-password', os.getenv('POSTGRES_PASSWORD'),
+        '--table-name', 'public.regions',
+        '--s3-path', f's3a://{os.getenv("MINIO_PROD_BUCKET_NAME")}/jdbc/regions/'
     ],
     conf={
         "spark.executor.instances": "1",
@@ -41,15 +43,11 @@ stream_kafka_to_s3 = SparkSubmitOperator(
         "spark.hadoop.fs.s3a.connection.ssl.enabled": "false"
     },
     packages=(
-        "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0,"
         "org.apache.hadoop:hadoop-aws:3.3.2,"
-        "com.amazonaws:aws-java-sdk-bundle:1.11.1026",
-        "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0"
+        "com.amazonaws:aws-java-sdk-bundle:1.11.1026,"
+        "org.postgresql:postgresql:42.5.0"
     ),
     dag=dag
 )
 
-stream_kafka_to_s3
-
-# "spark.hadoop.fs.s3a.access.key": os.getenv("AWS_ACCESS_KEY_ID"),
-# "spark.hadoop.fs.s3a.secret.key": os.getenv("AWS_SECRET_ACCESS_KEY"),
+jdbc_to_s3

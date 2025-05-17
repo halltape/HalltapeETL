@@ -5,29 +5,32 @@ from airflow.utils.dates import days_ago
 
 
 default_args = {
-    'owner': 'loader',
+    'owner': 'transformer',
     'start_date': days_ago(1),
     'retries': 1
 }
 
 dag = DAG(
-    dag_id="Load_Kafka__order_events",
+    dag_id="Transform_ObjStore__earthquake_regions",
     default_args=default_args,
-    schedule_interval='@once',
-    description="Spark Submit",
+    schedule_interval="00 10 * * *",
+    description="Spark Submit Inc",
     catchup=False,
-    tags=['spark', 'streaming']
+    tags=['spark', 'transform']
 )
 
 
-stream_kafka_to_s3 = SparkSubmitOperator(
-    task_id='spark_stream_kafka_to_s3',
-    application='/opt/airflow/scripts/load/load__order_events.py',  # путь до spark-скрипта
+s3_to_ch = SparkSubmitOperator(
+    task_id='spark_s3_to_ch',
+    application='/opt/airflow/scripts/transform/transform__earthquake_regions.py',
     conn_id='spark_default',
     application_args=[
-        '--kafka-topic', 'backend.public.order_events',
-        '--kafka-bootstrap', 'kafka:29093',
-        '--s3-path', f's3a://{os.getenv("MINIO_PROD_BUCKET_NAME")}/stream/order_events/'
+        '--jdbc-url', 'jdbc:clickhouse://clickhouse:8123/default',
+        '--db-user', os.getenv('CLICKHOUSE_USER'),
+        '--db-password', os.getenv('CLICKHOUSE_PASSWORD'),
+        '--table-name', 'enriched_earthquakes',
+        '--s3-path-regions', f's3a://{os.getenv("MINIO_PROD_BUCKET_NAME")}/jdbc/regions/',
+        '--s3-path-earthquake', f's3a://{os.getenv("MINIO_PROD_BUCKET_NAME")}/api/earthquake/'
     ],
     conf={
         "spark.executor.instances": "1",
@@ -41,15 +44,11 @@ stream_kafka_to_s3 = SparkSubmitOperator(
         "spark.hadoop.fs.s3a.connection.ssl.enabled": "false"
     },
     packages=(
-        "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0,"
         "org.apache.hadoop:hadoop-aws:3.3.2,"
-        "com.amazonaws:aws-java-sdk-bundle:1.11.1026",
-        "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0"
+        "com.amazonaws:aws-java-sdk-bundle:1.11.1026,"
+        "ru.yandex.clickhouse:clickhouse-jdbc:0.3.2"
     ),
     dag=dag
 )
 
-stream_kafka_to_s3
-
-# "spark.hadoop.fs.s3a.access.key": os.getenv("AWS_ACCESS_KEY_ID"),
-# "spark.hadoop.fs.s3a.secret.key": os.getenv("AWS_SECRET_ACCESS_KEY"),
+s3_to_ch

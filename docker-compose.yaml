@@ -73,6 +73,7 @@ services:
       - ./clickhouse:/var/lib/clickhouse
       - ./data_lake:/opt/data_lake
       - ./docker_related_config.xml:/etc/clickhouse-server/config.d/docker_related_config.xml
+      - ./clickhouse/init:/docker-entrypoint-initdb.d
     networks:
       - all_in_one
 
@@ -110,7 +111,7 @@ services:
           airflow connections add 'spark_default' \
             --conn-type 'spark' \
             --conn-host 'local' \
-            --conn-extra '{"spark-home": "/opt/spark", "spark-binary": "spark-submit", "deploy-mode": "local"}'
+            --conn-extra '{"spark-binary": "spark-submit", "deploy-mode": "client"}'
 
           airflow connections add 'backend_db' \
             --conn-type 'postgres' \
@@ -118,6 +119,14 @@ services:
             --conn-login "${POSTGRES_USER}" \
             --conn-password "${POSTGRES_PASSWORD}" \
             --conn-schema 'backend' \
+            --conn-port 5432
+        
+          airflow connections add 'metadata_db' \
+            --conn-type 'postgres' \
+            --conn-host 'postgres' \
+            --conn-login "${POSTGRES_USER}" \
+            --conn-password "${POSTGRES_PASSWORD}" \
+            --conn-schema 'metadata' \
             --conn-port 5432
         
           airflow connections add 'minios3_conn' \
@@ -158,7 +167,9 @@ services:
       - ./jupyter_notebook:/home/jovyan
     command: jupyter notebook --no-browser --NotebookApp.token='' --NotebookApp.password='' --ip='*' --allow-root
     environment:
-      - GRANT_SUDO=yes
+      GRANT_SUDO: yes
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     user: root
     restart: always
     networks:

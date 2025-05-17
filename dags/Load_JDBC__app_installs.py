@@ -14,7 +14,7 @@ dag = DAG(
     dag_id="Load_JDBC__app_installs",
     default_args=default_args,
     schedule_interval="*/1 * * * *",
-    description="Spark Submit",
+    description="Spark Submit Inc",
     catchup=False,
     tags=['spark', 'batch']
 )
@@ -22,14 +22,14 @@ dag = DAG(
 
 jdbc_to_s3 = SparkSubmitOperator(
     task_id='spark_jdbc_to_s3',
-    application='/opt/airflow/scripts/extract__app_installs.py',
+    application='/opt/airflow/scripts/load/load__app_installs.py',
     conn_id='spark_default',
     application_args=[
         '--jdbc-url', 'jdbc:postgresql://postgres:5432/backend',
         '--db-user', os.getenv('POSTGRES_USER'),
         '--db-password', os.getenv('POSTGRES_PASSWORD'),
         '--table-name', 'public.app_installs',
-        '--s3-path', f's3a://{os.getenv("MINIO_PROD_BUCKET_NAME")}/stage/app_installs/'
+        '--s3-path', f's3a://{os.getenv("MINIO_PROD_BUCKET_NAME")}/jdbc/app_installs/'
     ],
     conf={
         "spark.executor.instances": "1",
