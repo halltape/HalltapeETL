@@ -1,5 +1,4 @@
 logs/
-plugins/
 data_lake/
 synthetic_data/.ipynb_checkpoints
 jupyter_notebook/*
