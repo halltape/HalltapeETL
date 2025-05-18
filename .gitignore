@@ -7,7 +7,8 @@ jupyter_notebook/*
 superset_data/
 .idea/
 dags/__pycache__/
-clickhouse/
+clickhouse/*
+!clickhouse/init
 dags/.DS_Store
 .DS_Store
 s3_storage/
