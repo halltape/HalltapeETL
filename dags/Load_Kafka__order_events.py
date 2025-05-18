@@ -43,8 +43,7 @@ stream_kafka_to_s3 = SparkSubmitOperator(
     packages=(
         "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0,"
         "org.apache.hadoop:hadoop-aws:3.3.2,"
-        "com.amazonaws:aws-java-sdk-bundle:1.11.1026",
-        "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0"
+        "com.amazonaws:aws-java-sdk-bundle:1.11.1026"
     ),
     dag=dag
 )

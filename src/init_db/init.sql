@@ -43,7 +43,7 @@ VALUES
     ('South Georgia Island region', 'South Georgia Island', MD5(LOWER(TRIM('South Georgia Island region')))),
     ('Pacific-Antarctic Ridge', 'Southern Ocean', MD5(LOWER(TRIM('Pacific-Antarctic Ridge')))),
     ('Mid-Indian Ridge', 'Indian Ocean', MD5(LOWER(TRIM('Mid-Indian Ridge')))),
-    ('western Indian-Antarctic Ridge', 'Southern Ocean', MD5(LOWER(TRIM('western Indian-Antarctic Ridge'))))
+    ('western Indian-Antarctic Ridge', 'Southern Ocean', MD5(LOWER(TRIM('western Indian-Antarctic Ridge')))),
     ('Kermadec Islands region', 'New Zealand', MD5(LOWER(TRIM('Kermadec Islands region')))),
     ('southern East Pacific Rise', 'Pacific Ocean', MD5(LOWER(TRIM('southern East Pacific Rise')))),
     ('South Sandwich Islands region', 'South Sandwich Islands', MD5(LOWER(TRIM('South Sandwich Islands region'))));

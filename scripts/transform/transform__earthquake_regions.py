@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, from_unixtime, split, trim, lower, md5, to_date, max as spark_max
+from pyspark.sql.functions import col, from_unixtime, split, trim, lower, md5, to_date, coalesce
 import argparse
 import logging
 
@@ -70,7 +70,7 @@ try:
                             "id",
                             "ts",
                             "place",
-                            col("r.region").alias("region"),
+                            coalesce(col("r.region"), col("initial_region")).alias("region"),
                             "magnitude",
                             "felt",
                             "tsunami",
